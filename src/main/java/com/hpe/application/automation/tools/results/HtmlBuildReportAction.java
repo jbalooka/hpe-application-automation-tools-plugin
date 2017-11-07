@@ -44,6 +44,7 @@ import java.util.List;
 public class HtmlBuildReportAction implements Action {
     private static final String REPORTMETADATE_XML = "report_metadata.xml";
     private Run build;
+	private int myIndex;
     private List<ReportMetaData> reportMetaDataList = new ArrayList<ReportMetaData>();
 
 
@@ -52,7 +53,8 @@ public class HtmlBuildReportAction implements Action {
 
     public HtmlBuildReportAction(Run<?, ?> build) throws IOException, SAXException, ParserConfigurationException {
         this.build = build;
-
+		myIndex = this.build.getAllActions().size();
+		
         File reportMetaData_XML = new File(build.getRootDir(), REPORTMETADATE_XML);
         if (reportMetaData_XML.exists()) {
             readReportFromXMLFile(reportMetaData_XML.getAbsolutePath(), this.reportMetaDataList);
@@ -75,12 +77,12 @@ public class HtmlBuildReportAction implements Action {
 
     @Override
     public String getDisplayName() {
-		return "UFT Report";
+		return "UFT Report: " + myIndex;
     }
 
     @Override
     public String getUrlName() {
-        return "uft-report";
+        return "uft-report-" + myIndex;
     }
 
     @Override
