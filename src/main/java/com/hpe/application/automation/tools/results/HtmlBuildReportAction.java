@@ -22,20 +22,25 @@
 package com.hpe.application.automation.tools.results;
 
 
-import hudson.model.Action;
-import hudson.model.Run;
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
+import hudson.model.Action;
+import hudson.model.Run;
 
 /**
  * Created by betzalel on 28/06/2015.
@@ -43,8 +48,10 @@ import java.util.List;
 
 public class HtmlBuildReportAction implements Action {
     private static final String REPORTMETADATE_XML = "report_metadata.xml";
+    private Map<String, Integer> classnames;
+    private String displayName;
+    private String displayUrlName;
     private Run build;
-	private int myIndex;
     private List<ReportMetaData> reportMetaDataList = new ArrayList<ReportMetaData>();
 
 
@@ -53,7 +60,6 @@ public class HtmlBuildReportAction implements Action {
 
     public HtmlBuildReportAction(Run<?, ?> build) throws IOException, SAXException, ParserConfigurationException {
         this.build = build;
-		myIndex = this.build.getAllActions().size();
 		
         File reportMetaData_XML = new File(build.getRootDir(), REPORTMETADATE_XML);
         if (reportMetaData_XML.exists()) {
@@ -77,12 +83,12 @@ public class HtmlBuildReportAction implements Action {
 
     @Override
     public String getDisplayName() {
-		return "UFT Report: " + myIndex;
+		return displayName;
     }
 
     @Override
     public String getUrlName() {
-        return "uft-report-" + myIndex;
+       	return displayUrlName;
     }
 
     @Override
@@ -102,7 +108,9 @@ public class HtmlBuildReportAction implements Action {
         Document doc;
 		builder = dbf.newDocumentBuilder();
 		doc = builder.parse(filename);
-
+		classnames = Collections.synchronizedMap(new HashMap<String, Integer>());
+		Integer nClassnameOccurences = 0;
+		
         Element root = doc.getDocumentElement();
         NodeList reportList = root.getElementsByTagName("report");
         for (int i = 0; i < reportList.getLength(); i++) {
@@ -114,15 +122,32 @@ public class HtmlBuildReportAction implements Action {
             String dateTime = report.getAttribute("dateTime");
             String status = report.getAttribute("status");
             String isHtmlreport = report.getAttribute("isHtmlreport");
-
+            String classname = report.hasAttribute("classname") ? 
+            		report.getAttribute("classname") : "UFT Report " + i;
+            
             reportmetadata.setDisPlayName(disPlayName);
             reportmetadata.setUrlName(urlName);
             reportmetadata.setResourceURL(resourceURL);
             reportmetadata.setDateTime(dateTime);
             reportmetadata.setStatus(status);
             reportmetadata.setIsHtmlReport("true".equals(isHtmlreport));
+            reportmetadata.setClassname(classname);
             listReport.add(reportmetadata);
-
+            
+            nClassnameOccurences = classnames.containsKey(classname) ? classnames.remove(classname) + 1 : 1;
+            classnames.put(classname, nClassnameOccurences);
         }
+        
+        Integer currentMax = 0;
+        for (String classname : classnames.keySet()) {
+        	nClassnameOccurences = classnames.get(classname);
+        	
+        	if(nClassnameOccurences > currentMax) {
+        		displayName = classname;
+        		currentMax = nClassnameOccurences;
+        	}
+        }
+
+        displayUrlName = displayName.replace('.', '_').replace(' ', '_').replace('%', '%');
     }
 }

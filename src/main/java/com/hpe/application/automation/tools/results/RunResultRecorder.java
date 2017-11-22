@@ -387,7 +387,7 @@ public class RunResultRecorder extends Recorder implements Serializable, MatrixA
                 for (int i = 0; i < testCasesNodes.getLength(); i++) {
 
                     Node nNode = testCasesNodes.item(i);
-
+                   
                     if (nNode.getNodeType() == Node.ELEMENT_NODE) {
 
                         Element eElement = (Element) nNode;
@@ -400,7 +400,9 @@ public class RunResultRecorder extends Recorder implements Serializable, MatrixA
                                 eElement.getAttribute(REPORT_NAME_FIELD); // e.g. "C:\UFTTest\GuiTest1\Report"
                         String testFolderPath = eElement.getAttribute("name"); // e.g. "C:\UFTTest\GuiTest1"
                         String testStatus = eElement.getAttribute("status"); // e.g. "pass"
-
+                        String classname = eElement.hasAttribute("classname") ? eElement.getAttribute("classname") :
+                        	"Gui_Tests_UFT_Report";
+                        
                         Node nodeSystemInfo = eElement.getElementsByTagName("system-out").item(0);
                         String sysinfo = nodeSystemInfo.getFirstChild().getNodeValue();
                         String testDateTime = sysinfo.substring(0, 19);
@@ -425,6 +427,7 @@ public class RunResultRecorder extends Recorder implements Serializable, MatrixA
                             reportMetaData.setIsHtmlReport(true);
                             reportMetaData.setDateTime(testDateTime);
                             reportMetaData.setStatus(testStatus);
+                            reportMetaData.setClassname(classname);
 
                             File testFileFullName = new File(testFolderPath);
                             String testName = org.apache.commons.io.FilenameUtils.getName(testFileFullName.getPath());
@@ -488,6 +491,7 @@ public class RunResultRecorder extends Recorder implements Serializable, MatrixA
                                 reportMetaData.setResourceURL(zipFileUrlName);
                                 reportMetaData.setDateTime(testDateTime);
                                 reportMetaData.setStatus(testStatus);
+                                reportMetaData.setClassname(classname);
                                 ReportInfoToCollect.add(reportMetaData);
 
                             } else {
@@ -546,6 +550,7 @@ public class RunResultRecorder extends Recorder implements Serializable, MatrixA
             String dateTime = htmlReportInfo.getDateTime();
             String status = htmlReportInfo.getStatus();
             String isHtmlReport = htmlReportInfo.getIsHtmlReport() ? "true" : "false";
+            String classname = htmlReportInfo.getClassname();
             Element elmReport = doc.createElement(REPORT_NAME_FIELD);
             elmReport.setAttribute("disPlayName", disPlayName);
             elmReport.setAttribute("urlName", urlName);
@@ -553,6 +558,7 @@ public class RunResultRecorder extends Recorder implements Serializable, MatrixA
             elmReport.setAttribute("dateTime", dateTime);
             elmReport.setAttribute("status", status);
             elmReport.setAttribute("isHtmlreport", isHtmlReport);
+            elmReport.setAttribute("classname", classname);
             root.appendChild(elmReport);
 
         }

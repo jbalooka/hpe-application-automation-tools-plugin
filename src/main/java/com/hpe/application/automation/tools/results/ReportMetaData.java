@@ -14,6 +14,7 @@ public class ReportMetaData {
     private String dateTime;
     private String status;
     private Boolean isHtmlReport;
+    private String classname;
 
     public String getFolderPath() {
         return folderPath;
@@ -70,4 +71,12 @@ public class ReportMetaData {
     public void setIsHtmlReport(Boolean isHtmlReport) {
         this.isHtmlReport = isHtmlReport;
     }
+
+	public String getClassname() {
+		return classname;
+	}
+
+	public void setClassname(String classname) {
+		this.classname = classname;
+	}
 }
