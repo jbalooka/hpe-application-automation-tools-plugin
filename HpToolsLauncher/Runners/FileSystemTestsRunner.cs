@@ -16,7 +16,7 @@ namespace HpToolsLauncher
     public class FileSystemTestsRunner : RunnerBase, IDisposable
     {
         #region Members
-
+        private const double ROBOT_ALIVE_TIMEOUT = 1200;
         Dictionary<string, string> _jenkinsEnvVariables;
         private List<TestInfo> _tests;
         private static string _uftViewerPath;
@@ -190,12 +190,19 @@ namespace HpToolsLauncher
             KillAllAborterProcesses();
             Process aborter = StartHPToolsAborter();
 
+            DateTime robotAlive = DateTime.Now;
+
             try
             {
                 LogCleanupTestInfo();    
 
                 foreach (var test in _tests)
                 {
+                    if(IsRobotTooLongAlive(robotAlive)) {
+                        RunRobotCleanup();
+                        robotAlive = DateTime.Now;
+                    }
+
                     if (IsTestPlaceholder(test)) continue;
                     if (RunCancelled()) break;
 
@@ -207,7 +214,7 @@ namespace HpToolsLauncher
                     if (IsTestFailed(runResult) && IsCleanupTestDefined() && !IsCleanupTest(test))
                     {
                         Console.WriteLine("Test Failed: CLEANUP AND RE-RUN");
-                        runRobotCleanup();
+                        RunRobotCleanup();
                         ExecuteTest(GetCleanupTest());
            
                         if (RunCancelled()) break;
@@ -235,12 +242,16 @@ namespace HpToolsLauncher
                 activeRunDesc.TotalRunTime = TimeSpan.FromSeconds(totalTime);
                 activeRunDesc.NumFailures = _fail;
 
-                runRobotCleanup();
+                RunRobotCleanup();
             }
  
             return activeRunDesc;
         }
 
+        private bool IsRobotTooLongAlive(DateTime robotAlive)
+        {
+            return (DateTime.Now - robotAlive).TotalSeconds > ROBOT_ALIVE_TIMEOUT;
+        }
 
         private void LogCleanupTestInfo()
         {
@@ -387,7 +398,7 @@ namespace HpToolsLauncher
             return runResult.TestState == TestState.Failed || runResult.TestState == TestState.Error;
         }
 
-        private void runRobotCleanup()
+        private void RunRobotCleanup()
         {
 
             foreach (IFileSysTestRunner cleanupRunner in _colRunnersForCleanup.Values)
